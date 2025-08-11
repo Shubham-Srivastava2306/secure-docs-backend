@@ -5,40 +5,52 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 // Send OTP
 // controllers/authController.js
 
+// controllers/authController.js
+
+
+
+// Send OTP (testing mode: return OTP in response)
 exports.sendOTP = async (req, res) => {
   try {
     const { aadhaar, purpose } = req.body;
-    if (!aadhaar) return res.status(400).json({ message: "Aadhaar number required" });
 
-    // Generate random 6-digit OTP
-    const generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min expiry
+    if (!aadhaar) {
+      return res.status(400).json({ message: "Aadhaar is required" });
+    }
 
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min validity
+
+    // Check if user exists
     let user = await User.findOne({ aadhaar });
 
-    if (purpose === "login") {
-      if (!user) return res.status(404).json({ message: "Aadhaar not registered" });
+    if (purpose === "register") {
+      if (user) return res.status(400).json({ message: "User already registered" });
+
+      user = new User({ aadhaar, otp, otpExpiresAt });
+      await user.save();
+    } else if (purpose === "login") {
+      if (!user) return res.status(404).json({ message: "User not registered" });
+
+      user.otp = otp;
+      user.otpExpiresAt = otpExpiresAt;
+      await user.save();
+    } else {
+      return res.status(400).json({ message: "Invalid purpose" });
     }
 
-    if (!user) {
-      user = new User({ aadhaar });
-    }
+    console.log(`📩 OTP for ${aadhaar}: ${otp}`); // still logs to backend console
 
-    user.otp = generatedOTP;
-    user.otpExpiresAt = otpExpiresAt;
-    await user.save();
-
-    console.log(`📩 OTP for ${aadhaar}: ${generatedOTP}`);
-
-    // In testing mode, return OTP in response
-    res.json({ message: "OTP sent successfully", otp }); // <-- send OTP for testing
-
+    // ✅ Send OTP back in API response for testing
+    res.json({ message: "OTP sent successfully", otp });
 
   } catch (error) {
-    console.error("❌ OTP error:", error);
+    console.error("Error sending OTP:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 // Verify OTP
