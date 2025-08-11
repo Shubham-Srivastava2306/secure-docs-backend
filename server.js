@@ -13,11 +13,10 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // MongoDB connect
-mongoose.connect(
-  'mongodb+srv://ss4689878:8YPhJSP5cJTZPL6d@securedocscluster.zwlwqp7.mongodb.net/secureDocs?retryWrites=true&w=majority&appName=secureDocsCluster',
-  { useNewUrlParser: true, useUnifiedTopology: true }
-).then(() => console.log('✅ MongoDB Atlas connected'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('✅ MongoDB Atlas connected'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
+
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));

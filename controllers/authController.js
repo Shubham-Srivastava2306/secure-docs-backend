@@ -3,26 +3,43 @@ const User = require('../models/User');
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // Send OTP
+// controllers/authController.js
+
 exports.sendOTP = async (req, res) => {
-  const { aadhaar } = req.body;
-  if (!aadhaar) return res.status(400).json({ message: 'Aadhaar is required' });
+  try {
+    const { aadhaar, purpose } = req.body;
+    if (!aadhaar) return res.status(400).json({ message: "Aadhaar number required" });
 
-  const otp = generateOTP();
-  const expiry = new Date(Date.now() + 5 * 60 * 1000);
+    // Generate random 6-digit OTP
+    const generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min expiry
 
-  let user = await User.findOne({ aadhaar });
+    let user = await User.findOne({ aadhaar });
 
-  if (!user) {
-    return res.status(404).json({ message: 'Aadhaar not registered' });
+    if (purpose === "login") {
+      if (!user) return res.status(404).json({ message: "Aadhaar not registered" });
+    }
+
+    if (!user) {
+      user = new User({ aadhaar });
+    }
+
+    user.otp = generatedOTP;
+    user.otpExpiresAt = otpExpiresAt;
+    await user.save();
+
+    console.log(`📩 OTP for ${aadhaar}: ${generatedOTP}`);
+
+    // In testing mode, return OTP in response
+    res.json({ message: "OTP sent successfully", otp }); // <-- send OTP for testing
+
+
+  } catch (error) {
+    console.error("❌ OTP error:", error);
+    res.status(500).json({ message: "Server error" });
   }
-
-  user.otp = otp;
-  user.otpExpiresAt = expiry;
-  await user.save();
-
-  console.log(`🔐 OTP for Aadhaar ${aadhaar}: ${otp}`);
-  res.status(200).json({ message: 'OTP sent successfully (check server console)' });
 };
+
 
 // Verify OTP
 exports.verifyOTP = async (req, res) => {
