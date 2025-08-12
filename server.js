@@ -1,3 +1,15 @@
+const fs = require('fs');
+const path = require('path');
+
+const uploadDir = path.join(__dirname, 'uploads');
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+  console.log('✅ uploads/ folder created at startup');
+} else {
+  console.log('✅ uploads/ folder already exists');
+}
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
