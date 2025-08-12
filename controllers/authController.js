@@ -11,37 +11,39 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 
 // Send OTP (testing mode: return OTP in response)
 // Send OTP (Login or Registration)
+
+
+// Send OTP (Login or Registration)
 exports.sendOTP = async (req, res) => {
-  try {
-    const { aadhaar, purpose } = req.body;
+  const { aadhaar, purpose } = req.body;
 
-    if (!aadhaar || aadhaar.length !== 12) {
-      return res.status(400).json({ message: "Invalid Aadhaar number" });
-    }
-
-    // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStore[aadhaar] = otp; // Store in memory or DB
-
-    console.log(`✅ OTP for Aadhaar ${aadhaar}: ${otp}`);
-
-    // Check if user exists
-    const user = await User.findOne({ aadhaar });
-    if (purpose === "login" && !user) {
-      return res.status(404).json({ message: "User not registered" });
-    }
-
-    // ✅ Return OTP in response for testing
-    res.status(200).json({
-      message: "OTP sent successfully (testing mode)",
-      otp // REMOVE THIS in production for security
-    });
-
-  } catch (err) {
-    console.error("❌ Error sending OTP:", err);
-    res.status(500).json({ message: "Server error sending OTP" });
+  if (!/^\d{12}$/.test(aadhaar)) {
+    return res.status(400).json({ message: 'Invalid Aadhaar number' });
   }
+
+  let user = await User.findOne({ aadhaar });
+
+  if (purpose === 'login' && !user) {
+    return res.status(400).json({ message: 'Aadhaar not registered' });
+  }
+
+  // If purpose is 'register' and user doesn't exist, create a temporary user
+  if (purpose === 'register' && !user) {
+    user = new User({ aadhaar });
+  }
+
+  const otp = generateOTP();
+  const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+  user.otp = otp;
+  user.otpExpiresAt = expiry;
+  await user.save();
+
+  // In production, send OTP via SMS. For now, return it in response for testing.
+  res.status(200).json({ message: `OTP sent successfully`, otp }); // Remove `otp` in production
 };
+
+
 
 
 
