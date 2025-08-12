@@ -5,7 +5,15 @@ const path = require('path');
 // 📤 Upload document
 exports.uploadDocument = async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    // Ensure uploads folder exists
+    const uploadDir = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
 
     const filePath = req.file.path.replace(/\\/g, '/');
 
@@ -19,9 +27,11 @@ exports.uploadDocument = async (req, res) => {
     await doc.save();
     res.status(200).json({ message: 'Document uploaded successfully', document: doc });
   } catch (err) {
+    console.error('Upload error:', err); // helpful for debugging
     res.status(500).json({ message: 'Error uploading document', error: err.message });
   }
 };
+
 
 // 📥 Get documents (includes shared ones)
 exports.getDocuments = async (req, res) => {
