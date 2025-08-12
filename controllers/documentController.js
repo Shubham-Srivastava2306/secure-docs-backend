@@ -9,11 +9,19 @@ exports.uploadDocument = async (req, res) => {
 
     const filePath = req.file.path.replace(/\\/g, '/');
 
+    let doctype = req.body.doctype;
+    try {
+      doctype = JSON.parse(doctype); // Parse if it's JSON string
+    } catch (err) {
+      // If it's not JSON, keep it as-is
+    }
+
     const doc = new Document({
       ownerAadhaar: req.body.ownerAadhaar,
       originalName: req.file.originalname,
       filename: req.file.filename,
       filePath,
+      doctype, // ✅ Save it
     });
 
     await doc.save();
