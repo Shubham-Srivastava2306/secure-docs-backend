@@ -1,8 +1,7 @@
 const fs = require('fs');
-const path = require('path');
+const path = require('path'); // ✅ Only declared once
 
 const uploadDir = path.join(__dirname, 'uploads');
-
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
   console.log('✅ uploads/ folder created at startup');
@@ -13,7 +12,6 @@ if (!fs.existsSync(uploadDir)) {
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path');
 
 const app = express();
 
@@ -25,13 +23,8 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ✅ Register routes
-// ✅ Register routes
- // <-- Add this
-
 app.use('/api/auth', require('./routes/auth'));
-
-app.use('/api/docs', require('./routes/documents.js')); // <-- Now your /api/docs/upload works
-
+app.use('/api/docs', require('./routes/documents'));
 
 // MongoDB connection
 mongoose.connect(
@@ -40,9 +33,11 @@ mongoose.connect(
 .then(() => console.log("✅ MongoDB Atlas connected"))
 .catch(err => console.error("❌ MongoDB connection error:", err));
 
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
+// Catch-all route
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
-
